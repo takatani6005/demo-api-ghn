@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShopVN – GHN API</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="container header-inner">
+    <div class="logo">⚡ ShopVN</div>
+    <span class="badge-api">GHN API</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">▸ Tích hợp API Giao Hàng Nhanh</div>
+    <h1>Demo Tích Hợp <span>GHN API</span><br>Cho Website Bán Hàng</h1>
+    <p>Tính phí · Tạo đơn · Theo dõi vận đơn — Gọi API thật qua backend proxy</p>
+  </div>
+
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT: TÍNH PHÍ -->
+    <div>
+      <div class="section-label">Tính phí vận chuyển</div>
+      <div class="panel">
+        <div class="panel-header"><span>📦</span><h3>Thông tin đơn hàng</h3></div>
+        <div class="panel-body">
+
+          <div class="info-box">
+            <strong>Endpoint:</strong>
+            <span id="endpointLabel">POST /v2/shipping-order/fee</span>
+            <div class="chips">
+              <span class="chip">Token: Bearer ••••••••••••</span>
+              <span class="chip active-chip">GHN</span>
+            </div>
+          </div>
+
+          <!-- Tỉnh → District gửi -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>🏙️ Tỉnh/TP gửi</label>
+              <select id="fromProvince">
+                <option value="202">Hồ Chí Minh</option>
+                <option value="201">Hà Nội</option>
+                <option value="203">Đà Nẵng</option>
+                <option value="210">Cần Thơ</option>
+                <option value="205">Hải Phòng</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>🏘️ Quận/Huyện gửi</label>
+              <select id="fromDistrictId">
+                <option value="">Đang tải...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Tỉnh → District → Ward nhận -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>🏙️ Tỉnh/TP nhận</label>
+              <select id="toProvince">
+                <option value="201">Hà Nội</option>
+                <option value="202">Hồ Chí Minh</option>
+                <option value="203">Đà Nẵng</option>
+                <option value="210">Cần Thơ</option>
+                <option value="205">Hải Phòng</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>🏘️ Quận/Huyện nhận</label>
+              <select id="toDistrictId">
+                <option value="">Đang tải...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>📍 Phường/Xã nhận</label>
+            <select id="toWardCode">
+              <option value="">— chọn quận/huyện trước —</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>⚖️ Trọng lượng (g)</label>
+              <input type="number" id="weight" value="1200">
+            </div>
+            <div class="form-group">
+              <label>💰 Giá trị hàng (đ)</label>
+              <input type="number" id="insuredValue" value="350000">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>🚚 Dịch vụ giao hàng</label>
+            <select id="serviceType">
+              <option value="2">Giao hàng nhanh (2–3 ngày)</option>
+              <option value="5">Giao hàng tiết kiệm (4–6 ngày)</option>
+              <option value="3">Hỏa tốc — trong ngày</option>
+            </select>
+          </div>
+
+          <button class="btn btn-primary" onclick="App.calculateFee()">
+            🔍 Tính phí vận chuyển
+          </button>
+        </div>
+      </div>
+
+      <!-- KẾT QUẢ PHÍ -->
+      <div style="margin-top:20px">
+        <div class="section-label">Kết quả phí</div>
+        <div class="panel">
+          <div class="panel-body">
+            <div id="feeResult">
+              <div class="empty-state">
+                <div class="empty-icon">💸</div>
+                <p>Điền thông tin và nhấn<br><strong>"Tính phí vận chuyển"</strong></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: TẠO ĐƠN & THEO DÕI -->
+    <div>
+      <div class="section-label">Tạo đơn & theo dõi</div>
+
+      <div style="background:var(--surface);border-radius:20px 20px 0 0;border:1px solid var(--border);border-bottom:none;">
+        <div class="tabs">
+          <div class="tab active" data-tab="create" onclick="UI.switchTab('create')">📋 Tạo đơn</div>
+          <div class="tab" data-tab="track" onclick="UI.switchTab('track')">📍 Theo dõi</div>
+        </div>
+      </div>
+
+      <div class="panel" style="border-radius:0 0 20px 20px;border-top:none;">
+        <div class="panel-body">
+
+          <!-- Tab: Tạo đơn -->
+          <div id="tab-create">
+            <div class="order-summary">
+              <h4>🛍️ Giỏ hàng</h4>
+              <div id="productList"></div>
+            </div>
+
+            <div class="form-group">
+              <label>👤 Người nhận</label>
+              <input type="text" id="receiverName" value="Nguyễn Văn An">
+            </div>
+            <div class="form-group">
+              <label>📞 Số điện thoại</label>
+              <input type="text" id="receiverPhone" value="0901234567">
+            </div>
+            <div class="form-group">
+              <label>🏠 Địa chỉ nhận hàng</label>
+              <input type="text" id="receiverAddress" value="123 Lê Lợi, P.Bến Thành">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>💵 Tiền thu hộ (COD)</label>
+                <input type="number" id="codAmount" value="350000">
+              </div>
+              <div class="form-group">
+                <label>📝 Ghi chú</label>
+                <input type="text" id="orderNote" value="Giao giờ hành chính">
+              </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="App.createOrder()">
+              ✅ Tạo đơn hàng &amp; lấy mã vận đơn
+            </button>
+            <div id="createResult" style="margin-top:16px"></div>
+          </div>
+
+          <!-- Tab: Theo dõi -->
+          <div id="tab-track" style="display:none">
+            <div class="form-group">
+              <label>🔢 Mã vận đơn GHN</label>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="trackingCode" placeholder="VD: GHN20241201XXXXX">
+                <button class="btn-sm" onclick="App.trackOrder()">Tra cứu</button>
+              </div>
+            </div>
+
+            <div id="trackResult">
+              <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <p>Nhập mã vận đơn và nhấn<br><strong>"Tra cứu"</strong></p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+
+  <!-- API CONSOLE -->
+  <div style="margin-top:40px">
+    <div class="section-label">HTTP Request / Response Console</div>
+  </div>
+  <div class="api-console">
+    <div class="console-header">
+      <div class="console-dots">
+        <span class="dot-red"></span>
+        <span class="dot-yellow"></span>
+        <span class="dot-green"></span>
+      </div>
+      <span class="console-title">▸ GHN API — request/response log</span>
+      <button onclick="AppConsole.clear()" style="margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--muted);padding:3px 10px;font-size:.7rem;border-radius:6px;cursor:pointer">
+        clear
+      </button>
+    </div>
+    <div class="console-body" id="consoleBody"></div>
+  </div>
+
+</div><!-- /container -->
+
+<footer>
+  <div class="container">
+    <p>ShopVN × Giao Hàng Nhanh API</p>
+    <p style="margin-top:5px;opacity:.45">
+      <code>MOCK_MODE=false</code> — Request thật qua <code>server.js</code> proxy.
+      Token bảo mật trong <code>.env</code>.
+    </p>
+  </div>
+</footer>
+
+<!-- Scripts — thứ tự quan trọng -->
+<script src="js/config.js"></script>    <!-- 1. Config & constants -->
+<script src="js/console.js"></script>   <!-- 2. Logger UI -->
+<script src="js/api.js"></script>       <!-- 3. GHN API calls -->
+<script src="js/ui.js"></script>        <!-- 4. DOM render -->
+<script src="js/app.js"></script>       <!-- 5. Controller -->
+
+</body>
+</html>
