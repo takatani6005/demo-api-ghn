@@ -1,108 +1,159 @@
-# 🎤 Kịch bản thuyết trình Demo GHN API
+# Kịch bản thuyết trình — Tích hợp GHN Shipping API
 
-> Dùng nội bộ — không cần trình chiếu, chỉ cần mở browser và nói theo luồng này.
-
----
-
-## Mở đầu (~1 phút)
-
-> *"Mình sẽ demo cách một website bán hàng tích hợp API của Giao Hàng Nhanh —
-> cụ thể là 3 việc mà bất kỳ shop online nào cũng cần:
-> tính phí ship, tạo đơn, và theo dõi vận đơn."*
-
-Chỉ vào màn hình:
-> *"Đây là giao diện của một shop demo — ShopVN.
-> Toàn bộ đều gọi API thật của GHN sandbox,
-> không phải mock hay fake data."*
+**Thời lượng:** ~15 phút  
+**Audience:** Kỹ thuật / Semi-technical  
+**Demo live tại:** `http://localhost:3000`
 
 ---
 
-## Phần 1 — Giải thích luồng kỹ thuật (~2 phút)
+## Mở đầu (1 phút)
 
-> *"Trước khi demo, mình giải thích nhanh tại sao cần có backend proxy."*
+> "Bài toán đặt ra là: khi khách hàng checkout, làm sao hiển thị đúng phí vận chuyển theo địa chỉ thực tế, chọn dịch vụ phù hợp, và tạo vận đơn ngay trên trang — thay vì để shop tự nhập tay trên hệ thống GHN?"
 
-Vẽ nhanh lên bảng hoặc chỉ vào console:
+> "Hôm nay mình sẽ demo luồng tích hợp hoàn chỉnh với GHN API, chạy trên dữ liệu thật — không mock."
 
+---
+
+## Phần 1 — Kiến trúc bảo mật (2 phút)
+
+**Nói:**
+> "Vấn đề đầu tiên khi tích hợp bất kỳ API nào vào frontend: token không được để lộ ra client."
+
+**Mở file `.env` (hoặc slide):**
 ```
-Browser  →  /api/ghn/...  →  server.js  →  GHN API
-                                ↑
-                       Token giữ trong .env
+GHN_TOKEN=xxxxxxxxxxxxx
+GHN_SHOP_ID=xxxxxxx
+GHN_ENV=sandbox
 ```
 
-> *"Nếu gọi thẳng từ frontend, token sẽ lộ trong DevTools — ai cũng thấy.
-> Nên mình dùng Node.js làm proxy trung gian:
-> frontend chỉ biết '/api/ghn/...', còn token thật nằm trong file .env
-> trên server, không bao giờ xuất hiện ở browser."*
+**Nói:**
+> "Token nằm hoàn toàn trên server. Frontend chỉ gọi `/api/ghn/*` — một proxy nội bộ viết bằng Express. Server nhận request, gắn token vào header, rồi forward sang GHN."
+
+**Mở terminal, chỉ log server:**
+> "Mỗi request đều được log rõ ở đây — method, URL, body, response time. Token không bao giờ xuất hiện ở phía client."
+
+**Mở DevTools → Network tab:**
+> "Nhìn vào request từ browser: header chỉ có `Content-Type`. Token hoàn toàn không có mặt."
+
+**Điểm nhấn:**
+- Frontend → `/api/ghn/...` (proxy)
+- Server inject `Token` + `ShopId` từ `.env`
+- Browser không bao giờ thấy token thật
 
 ---
 
-## Phần 2 — Demo tính phí (~3 phút)
+## Phần 2 — Trang checkout: load địa chỉ động (3 phút)
 
-**Làm:**
-1. Chọn TP.HCM → chờ district load
-2. Chọn Hà Nội nhận → chọn quận → chọn phường
+**Mở trình duyệt, vào trang checkout.**
 
-> *"Các dropdown này không phải hard-code —
-> mình đang gọi API `/master-data/district` và `/master-data/ward`
-> để lấy danh sách thật từ GHN theo thời gian thực."*
+**Nói:**
+> "Ngay khi trang load, hệ thống đã tự động gọi GHN để lấy danh sách quận/huyện và phường/xã — không hardcode gì cả."
 
-3. Nhập trọng lượng `1200`, giá trị hàng `350000`
-4. Nhấn **Tính phí**
+**Chỉ vào Developer Console (bottom of page), mở ra:**
+> "Đây là log thật của các request. Ta thấy ngay 4 call khi trang vừa load:"
 
-> *"Nhìn xuống console — thấy request POST vừa được gửi đi,
-> và response trả về có `total`, `service_fee`, `insurance_fee`.
-> GHN tính phí dựa trên tuyến đường, trọng lượng, và loại dịch vụ."*
+```
+GET /master-data/district?province_id=202   ← quận/huyện kho gửi (HCM)
+GET /master-data/district?province_id=201   ← quận/huyện địa chỉ nhận (HN)
+GET /master-data/ward?district_id=xxxx      ← phường/xã kho gửi
+GET /master-data/ward?district_id=xxxx      ← phường/xã địa chỉ nhận
+```
 
----
+**Đổi tỉnh nhận từ Hà Nội → Đà Nẵng:**
+> "Khi đổi tỉnh, hệ thống tự reload quận/huyện tương ứng. Cascade đến phường/xã. Sau khi cả hai phía sẵn sàng, tự động trigger tính phí — không cần nhấn nút nào."
 
-## Phần 3 — Demo tạo đơn (~3 phút)
-
-**Làm:**
-1. Chuyển tab **Tạo đơn**
-2. Chỉ vào giỏ hàng mẫu
-
-> *"Giỏ hàng có sẵn 2 sản phẩm — trong thực tế đây sẽ là đơn hàng thật
-> từ database của shop."*
-
-3. Nhấn **Tạo đơn hàng**
-
-> *"Kết quả trả về `order_code` — đây là mã vận đơn thật trên hệ thống GHN sandbox.
-> Shop dùng mã này để in nhãn và giao cho shipper."*
+**Điểm nhấn:**
+- Dữ liệu địa chỉ lấy live từ GHN, không hardcode
+- Cascade: tỉnh → quận → phường → tự tính phí
+- Debounce 400ms tránh gọi API liên tục
 
 ---
 
-## Phần 4 — Demo theo dõi (~2 phút)
+## Phần 3 — Tính phí: luồng 2 bước (4 phút)
 
-**Làm:**
-1. Nhấn **"Theo dõi đơn này ngay"**
+**Nói:**
+> "Đây là phần kỹ thuật thú vị nhất. GHN yêu cầu tính phí theo 2 bước bắt buộc — nhiều người bỏ qua bước 1 nên bị lỗi."
 
-> *"Bấm một cái là chuyển sang tab theo dõi và tự động tra cứu luôn.
-> API trả về `log` — là lịch sử cập nhật trạng thái từng bước của đơn hàng."*
+**Chỉ vào console log, giải thích:**
 
-2. Chỉ vào timeline trạng thái
+**Bước 1 — `POST /available-services`:**
+> "Trước tiên phải hỏi GHN: với tuyến đường này, shop này có những dịch vụ nào khả dụng? GHN trả về danh sách kèm `service_id` — ID cụ thể của dịch vụ đó với shop này."
 
-> *"Trong thực tế shop sẽ dùng webhook để nhận thông báo tự động
-> thay vì phải tra thủ công như này."*
+**Bước 2 — `POST /fee` (mỗi dịch vụ một lần):**
+> "Sau đó mới tính phí, bắt buộc dùng `service_id` vừa lấy — không phải `service_type_id` chung. Mình tính tuần tự từng dịch vụ để tránh race condition trên proxy."
+
+**Chỉ vào các service card:**
+> "Kết quả hiển thị lên từng card. Dịch vụ nào GHN báo không khả dụng — ví dụ Hàng nặng khi đơn chỉ 500g — card đó bị mờ và disabled, không cho chọn."
+
+**Live demo: thay đổi trọng lượng:**
+> "Thay trọng lượng từ 500g lên 25000g. Hệ thống tự tính lại — lần này Hàng nặng có giá, card sáng lên, có thể chọn được."
+
+**Chỉ vào order review block ở Bước 03:**
+> "Phí vận chuyển cập nhật live xuống phần tổng kết đơn hàng bên dưới — Tạm tính + Phí ship = Tổng cộng. Không có số nào hardcode."
+
+**Điểm nhấn:**
+- `service_type_id` ≠ `service_id` — lỗi phổ biến khi tích hợp GHN lần đầu
+- Dịch vụ không hợp lệ → disabled card + tooltip rõ lý do
+- Tổng tiền cập nhật real-time theo dịch vụ đang chọn
 
 ---
 
-## Kết (~1 phút)
+## Phần 4 — Tạo đơn hàng (3 phút)
 
-> *"Tóm lại, để tích hợp GHN vào một website bán hàng cần 3 thứ:*
->
-> *1. Token + Shop ID — đăng ký tài khoản GHN là có*
-> *2. Backend proxy — để bảo mật token, không để lộ ra frontend*
-> *3. Gọi đúng 3 endpoint chính — fee, create, detail*
->
-> *Code của project này open source, mọi người có thể clone về
-> chạy thử với token sandbox miễn phí."*
+**Điền form Bước 01 (đã có sẵn dữ liệu mẫu):**
+> "Thông tin người nhận nhập một lần, dùng chung cho cả tính phí lẫn tạo đơn — không phải nhập hai chỗ."
+
+**Chọn dịch vụ ở Bước 02** (ví dụ: Giao hàng chuẩn).
+
+**Xuống Bước 03, nhấn "Đặt hàng":**
+> "Khi đặt hàng, hệ thống gửi `service_id` của dịch vụ đang được chọn — không phải `service_type_id` mặc định. Địa chỉ kho gửi cũng được truyền tường minh thay vì để GHN tự lấy từ shop profile."
+
+**Modal xuất hiện:**
+> "GHN trả về mã vận đơn thật. Từ đây shop có thể in nhãn và bàn giao cho shipper."
+
+**Chỉ vào console log:**
+> "Request body đầy đủ được log ở đây — weight, service_id, địa chỉ gửi và nhận, danh sách sản phẩm."
+
+**Điểm nhấn:**
+- `service_id` đang chọn → truyền thẳng vào create order
+- Địa chỉ nhập 1 lần, dùng cho cả 3 bước
+- Modal confirmation thay thế inline result — UX rõ ràng hơn
 
 ---
 
-## Tips khi demo
+## Phần 5 — Câu hỏi hay gặp (2 phút)
 
-- Mở sẵn **DevTools → Network tab** để show request thật đang đi
-- Mở sẵn terminal đang chạy `node server.js` để show log màu sắc
-- Nếu bị lỗi 401 → bình tĩnh giải thích "đây là lỗi token — ví dụ thực tế
-  khi chưa cấu hình đúng .env"
-- Nếu bị lỗi mạng → chuyển sang giải thích code thay vì demo live
+**"Nếu GHN thay đổi API thì sao?"**
+> "Toàn bộ endpoint và cấu hình nằm trong `config.js` và `server.js`. Thay đổi ở một chỗ, không cần sửa rải rác."
+
+**"Token bị lộ qua server log thì sao?"**
+> "Server.js mask token trong log — hiển thị `••••••••••••` thay vì giá trị thật. Log an toàn để commit."
+
+**"Sandbox khác production thế nào?"**
+> "Đổi `GHN_ENV=prod` trong `.env`, restart server. Không cần sửa một dòng code nào."
+
+**"Tại sao dùng proxy thay vì gọi thẳng GHN từ frontend?"**
+> "Ba lý do: bảo mật token, có thể thêm rate limiting và cache ở proxy layer, và dễ mock khi test."
+
+---
+
+## Tóm tắt kỹ thuật (30 giây)
+
+| Vấn đề | Giải pháp |
+|---|---|
+| Bảo mật token | Express proxy — token chỉ tồn tại trên server |
+| Tính phí đúng | 2 bước: `available-services` → `fee` với `service_id` thật |
+| Race condition | Tính tuần tự + `AbortController` cancel lần cũ |
+| UX địa chỉ | Cascade tự động, debounce 400ms |
+| UX đặt hàng | 3 bước tuyến tính, dữ liệu dùng chung, modal confirmation |
+
+---
+
+## Checklist trước khi demo
+
+- [ ] `node server.js` đang chạy tại port 3000
+- [ ] `.env` có `GHN_TOKEN` và `GHN_SHOP_ID` hợp lệ
+- [ ] `GHN_ENV=sandbox` (không demo trên production)
+- [ ] Mở sẵn tab: trang checkout + terminal log + DevTools Network
+- [ ] Đóng các tab không liên quan để tránh phân tán
+- [ ] Test thử 1 lần đặt hàng trước để xác nhận sandbox đang hoạt động
