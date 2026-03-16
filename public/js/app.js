@@ -160,9 +160,13 @@ const App = (() => {
           if (calcSignal.aborted) return;
           // GHN sandbox trả 'required' tag khi weight không đạt ngưỡng tối thiểu
           // của dịch vụ (thay vì 'min' tag đúng chuẩn) — detect để hiển thị đúng gợi ý
-          const isWeightErr = /weight/i.test(err.message);
-          UI.updateServicePrice(svc.service_id, null, true, isWeightErr ? 'Cần tăng trọng lượng' : null);
-          AppConsole.comment(`ℹ︎ ${svc.short_name} (${svc.service_id}): ${isWeightErr ? 'weight không đạt ngưỡng tối thiểu dịch vụ' : err.message}`);
+          // GHN trả "Cân nặng không hợp lệ" khi tuyến không hỗ trợ dịch vụ —
+          // message misleading từ GHN sandbox, không phải lỗi weight thực sự.
+          // Detect cả tiếng Anh (weight) lẫn tiếng Việt (cân nặng) để hiển thị đúng.
+          const isRouteErr = /weight|cân nặng/i.test(err.message);
+          const hint = isRouteErr ? 'Không hỗ trợ tuyến này' : null;
+          UI.updateServicePrice(svc.service_id, null, true, hint);
+          AppConsole.comment(`ℹ︎ ${svc.short_name} (${svc.service_id}): ${isRouteErr ? 'tuyến không hỗ trợ dịch vụ này' : err.message}`);
         }
       }
 

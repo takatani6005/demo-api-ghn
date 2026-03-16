@@ -146,23 +146,25 @@ const UI = (() => {
     const el    = document.getElementById(`price-svc-${serviceId}`);
     const radio = document.querySelector(`input[name="service"][value="${serviceId}"]`);
     if (!el) return;
+
+    // Luôn thao tác trên label.service-option (element gốc) để tránh
+    // conflict CSS khi reset — closest từ price element lên đến label
+    const label = el.closest('label.service-option') ?? el.closest('.service-card');
+
     if (isError || total === null) {
-      el.textContent = hint ?? 'N/A';
-      el.style.color  = 'var(--muted, #999)';
+      el.textContent    = hint ?? 'N/A';
+      el.style.color    = 'var(--muted, #999)';
       el.style.fontSize = hint ? '.72rem' : '';
-      el.title        = hint ?? 'Dịch vụ này không áp dụng cho đơn hàng hiện tại';
-      // Disable radio — không cho chọn dịch vụ không tính được phí
-      if (radio) { radio.disabled = true; }
-      const card = el.closest('.service-card');
-      if (card) card.style.opacity = '0.45';
+      el.title          = hint ?? 'Dịch vụ này không áp dụng cho đơn hàng hiện tại';
+      if (radio) radio.disabled = true;
+      if (label) { label.style.opacity = '0.4'; label.style.pointerEvents = 'none'; }
     } else {
-      el.textContent = vnd(total);
-      el.style.color  = '';
+      el.textContent    = vnd(total);
+      el.style.color    = '';
       el.style.fontSize = '';
-      el.title = '';
-      if (radio) { radio.disabled = false; }
-      const card = el.closest('.service-card');
-      if (card) card.style.opacity = '';
+      el.title          = '';
+      if (radio) radio.disabled = false;
+      if (label) { label.style.opacity = ''; label.style.pointerEvents = ''; }
     }
   }
 
