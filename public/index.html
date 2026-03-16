@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LUMI Store — Checkout</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────────────── -->
+<header>
+  <div class="container header-inner">
+    <div class="logo">LUMI</div>
+  </div>
+</header>
+
+<!-- ── BREADCRUMB ──────────────────────────────────────────────── -->
+<div class="breadcrumb-bar">
+  <div class="container">
+    <span class="bc-done">Giỏ hàng</span>
+    <span class="bc-sep">›</span>
+    <span class="bc-done">Thông tin</span>
+    <span class="bc-sep">›</span>
+    <span class="bc-active">Vận chuyển</span>
+    <span class="bc-sep">›</span>
+    <span class="bc-next">Thanh toán</span>
+  </div>
+</div>
+
+<!-- ── MAIN LAYOUT ─────────────────────────────────────────────── -->
+<main class="container checkout-layout">
+
+  <!-- ════════════════════════════════
+       CỘT TRÁI — Form đặt hàng
+  ════════════════════════════════ -->
+  <div class="checkout-left">
+
+    <!-- Tabs: Đặt hàng / Theo dõi -->
+
+    <!-- ══════════════════════════════
+         TAB: ĐẶT HÀNG
+         3 bước tuyến tính trong 1 section
+    ══════════════════════════════ -->
+          <section class="checkout-section">
+
+        <!-- BƯỚC 1: Địa chỉ giao hàng -->
+        <div class="step-block">
+          <div class="section-heading">
+            <span class="section-num">01</span>
+            <h2>Địa chỉ giao hàng</h2>
+          </div>
+
+          <div class="field-group">
+            <label>Người nhận</label>
+            <input type="text" id="receiverName" value="Nguyễn Văn An">
+          </div>
+          <div class="field-group">
+            <label>Số điện thoại</label>
+            <input type="text" id="receiverPhone" value="0901234567">
+          </div>
+          <div class="field-group">
+            <label>Địa chỉ chi tiết</label>
+            <input type="text" id="receiverAddress" value="123 Lê Lợi, P.Bến Thành">
+          </div>
+
+          <!-- Tỉnh + Quận + Phường nhận hàng -->
+          <div class="field-group">
+            <label>Tỉnh / Thành phố</label>
+            <select id="toProvince">
+              <option value="201">Hà Nội</option>
+              <option value="202">Hồ Chí Minh</option>
+              <option value="203">Đà Nẵng</option>
+              <option value="210">Cần Thơ</option>
+              <option value="205">Hải Phòng</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <div class="field-group" style="flex:1">
+              <label>Quận / Huyện</label>
+              <select id="toDistrictId"><option>Đang tải...</option></select>
+            </div>
+            <div class="field-group" style="flex:1">
+              <label>Phường / Xã</label>
+              <select id="toWardCode"><option>— chọn quận trước —</option></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <!-- BƯỚC 2: Phương thức vận chuyển -->
+        <div class="step-block">
+          <div class="section-heading">
+            <span class="section-num">02</span>
+            <h2>Phương thức vận chuyển</h2>
+            <span class="api-badge">GHN API</span>
+          </div>
+
+          <!-- Kho gửi — ẩn gọn, ít khi cần thay đổi -->
+          <details class="warehouse-details">
+            <summary>Kho gửi hàng <span class="muted-text" id="warehouseSummary">Đang tải...</span></summary>
+            <div style="padding:12px 0 4px">
+              <div class="field-row">
+                <div class="field-group" style="flex:1">
+                  <label>Tỉnh kho gửi</label>
+                  <select id="fromProvince">
+                    <option value="202">Hồ Chí Minh</option>
+                    <option value="201">Hà Nội</option>
+                    <option value="203">Đà Nẵng</option>
+                    <option value="210">Cần Thơ</option>
+                    <option value="205">Hải Phòng</option>
+                  </select>
+                </div>
+                <div class="field-group" style="flex:1">
+                  <label>Quận / Huyện kho</label>
+                  <select id="fromDistrictId"><option>Đang tải...</option></select>
+                </div>
+              </div>
+              <div class="field-group">
+                <label>Phường / Xã kho</label>
+                <select id="fromWardCode"><option>— chọn quận trước —</option></select>
+              </div>
+            </div>
+          </details>
+
+          <!-- Trọng lượng & giá trị bảo hiểm -->
+          <div class="field-row" style="margin-top:12px">
+            <div class="field-group" style="flex:1">
+              <label>Trọng lượng (gram) <span style="font-size:.75rem;opacity:.5;font-weight:400">sandbox ≤ 1000g</span></label>
+              <input type="number" id="weight" value="500" min="1" max="1000">
+            </div>
+            <div class="field-group" style="flex:1">
+              <label>Giá trị hàng (VNĐ)</label>
+              <input type="number" id="insuredValue" value="350000">
+            </div>
+          </div>
+
+          <div class="api-info">
+            <span class="api-method">POST</span>
+            <span class="api-endpoint">/available-services → /fee</span>
+          </div>
+
+          <!-- Danh sách dịch vụ — render động sau khi gọi API -->
+          <div class="field-group">
+            <label>Chọn dịch vụ</label>
+            <div id="serviceOptions" class="service-options">
+              <p class="placeholder-text">Đang tải dịch vụ...</p>
+            </div>
+          </div>
+
+          <!-- Chi tiết phí dịch vụ đang chọn -->
+          <div id="feeResult">
+            <p class="placeholder-text">Đang tải phí vận chuyển...</p>
+          </div>
+        </div>
+
+        <div class="step-divider"></div>
+
+        <!-- BƯỚC 3: Xác nhận & Đặt hàng -->
+        <div class="step-block">
+          <div class="section-heading">
+            <span class="section-num">03</span>
+            <h2>Xác nhận đơn hàng</h2>
+            <span class="api-badge">GHN API</span>
+          </div>
+
+          <div class="api-info">
+            <span class="api-method">POST</span>
+            <span class="api-endpoint">/v2/shipping-order/create</span>
+          </div>
+
+          <!-- Review block: sản phẩm + phí — cập nhật bởi ui.js -->
+          <div class="order-review">
+            <div id="productList"></div>
+            <hr class="divider">
+            <div class="summary-row">
+              <span>Tạm tính</span>
+              <span id="subtotalAmount">—</span>
+            </div>
+            <div class="summary-row">
+              <span>Phí vận chuyển</span>
+              <span id="shippingFeeAmount" class="muted-text">Chưa tính</span>
+            </div>
+            <hr class="divider">
+            <div class="summary-row summary-total">
+              <span>Tổng cộng</span>
+              <span id="totalAmount">—</span>
+            </div>
+          </div>
+
+          <div class="field-row" style="margin-top:20px">
+            <div class="field-group" style="flex:1">
+              <label>Tiền thu hộ COD</label>
+              <input type="number" id="codAmount" value="350000">
+            </div>
+            <div class="field-group" style="flex:1">
+              <label>Ghi chú cho shipper</label>
+              <input type="text" id="orderNote" value="Giao giờ hành chính">
+            </div>
+          </div>
+
+          <div class="tech-note" style="margin-bottom:16px">
+            <span class="tech-dot"></span>
+            Token ẩn trong <code>.env</code> — proxy qua <code>server.js</code>
+          </div>
+
+          <button class="btn-primary" onclick="App.createOrder()">
+            Đặt hàng &amp; lấy mã vận đơn →
+          </button>
+
+          <div id="createResult" style="margin-top:16px"></div>
+        </div>
+
+      </section>
+
+
+
+  </div><!-- /checkout-left -->
+
+</main>
+
+<!-- ── API CONSOLE ─────────────────────────────────────────────── -->
+<div class="container console-wrapper">
+  <button class="console-toggle" onclick="document.getElementById('apiConsole').classList.toggle('is-open')">
+    <span>Developer Console — xem HTTP request / response</span>
+    <span class="toggle-chevron">▾</span>
+  </button>
+
+  <div class="api-console" id="apiConsole">
+    <div class="console-header">
+      <div class="console-dots">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+      </div>
+      <span class="console-title">GHN API — request / response log</span>
+      <button class="console-clear" onclick="AppConsole.clear()">clear</button>
+    </div>
+    <div class="console-body" id="consoleBody"></div>
+  </div>
+</div>
+
+<!-- ── FOOTER ──────────────────────────────────────────────────── -->
+<footer>
+  <div class="container footer-inner">
+    <div class="footer-logo">LUMI</div>
+    <p>Demo tích hợp GHN Shipping API · Token bảo mật qua <code>server.js</code> proxy</p>
+  </div>
+</footer>
+
+<!-- Scripts — thứ tự quan trọng -->
+<script src="js/config.js"></script>
+<script src="js/console.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
